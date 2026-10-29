@@ -114,15 +114,15 @@ textarea{min-height:110px;resize:vertical}
 
 <div id="done"><section class="card"><h2>AVALIAÇÃO SALVA</h2><div class="in">
 <div class="sum" id="doneTxt"></div>
-<div class="btns" style="margin-top:12px"><button class="btn" id="bCsv">Baixar esta (CSV)</button><a class="btn" id="bMail" href="#" style="text-decoration:none;text-align:center;display:block">Enviar por e-mail</a><button class="btn sec" id="bCopy">Copiar resumo</button><button class="btn" id="bNova">Avaliar outro aluno</button></div>
+<div class="btns" style="margin-top:12px"><button class="btn sec" id="bCsv">Baixar esta (CSV)</button><a class="btn" id="bMailAll2" href="#" style="text-decoration:none;text-align:center;display:block">Enviar todos os alunos por e-mail</a><a class="btn sec" id="bMail" href="#" style="text-decoration:none;text-align:center;display:block">Enviar só este aluno por e-mail</a><button class="btn sec" id="bCopy">Copiar resumo</button><button class="btn" id="bNova">Avaliar outro aluno</button></div>
 <div class="mut" id="msg" style="margin-top:8px"></div>
 </div></section></div>
 
 <section class="card" id="histCard"><h2>AVALIAÇÕES SALVAS NESTE APARELHO</h2><div class="in">
 <div class="hist" id="hist"></div>
-<div class="btns" style="margin-top:10px"><button class="btn sec" id="bAll">Baixar todas (CSV)</button></div>
+<div class="btns" style="margin-top:10px"><a class="btn" id="bMailAll" href="#" style="text-decoration:none;text-align:center;display:block">Enviar todos os alunos por e-mail</a><button class="btn sec" id="bCopyAll">Copiar todos</button><button class="btn sec" id="bAll">Baixar todas (CSV)</button><button class="btn sec" id="bClear">Limpar lista</button></div>
 <div class="mut" id="msg2" style="margin-top:8px"></div>
-<div class="mut" style="margin-top:8px">O histórico fica apenas neste navegador. Baixe o CSV para guardar ou enviar à coordenação.</div>
+<div class="mut" style="margin-top:8px">Depois de enviar o e-mail com todos os alunos, toque em Limpar lista para começar um novo grupo. O histórico fica apenas neste navegador. Baixe o CSV para guardar ou enviar à coordenação.</div>
 </div></section>
 </main>
 
@@ -195,8 +195,8 @@ function copy(t){var ok=false;try{var a=document.createElement("textarea");a.val
  if(!ok&&navigator.clipboard){return navigator.clipboard.writeText(t).then(function(){$("msg").textContent="Resumo copiado."},function(){$("msg").textContent="Não foi possível copiar."})}
  $("msg").textContent=ok?"Resumo copiado.":"Não foi possível copiar."}
 function fname(r){return"mini-cex_"+(r.aluno||"aluno").replace(/[^\wÀ-ÿ]+/g,"-")+"_"+(r.data||"")+".csv"}
-function renderHist(){var h=$("hist");h.innerHTML="";if(!hist.length){h.innerHTML='<span class="mut">Nenhuma avaliação salva ainda.</span>';$("bAll").style.display="none";return}
- $("bAll").style.display="";hist.slice().reverse().forEach(function(r){var x=rec(Object.assign({},r));var d=document.createElement("div");d.innerHTML="<span></span><span class='mut'></span>";d.children[0].textContent=x.aluno;d.children[1].textContent=x.dataBr+(x.media?" · média "+x.media:"");h.appendChild(d)})}
+function renderHist(){var h=$("hist");h.innerHTML="";if(!hist.length){h.innerHTML='<span class="mut">Nenhuma avaliação salva ainda.</span>';setAllBtns("none");return}
+ setAllBtns("");$("bMailAll2").textContent=hist.length>1?"Enviar todos os "+hist.length+" alunos por e-mail":"Enviar este aluno por e-mail";hist.slice().reverse().forEach(function(r){var x=rec(Object.assign({},r));var d=document.createElement("div");d.innerHTML="<span></span><span class='mut'></span>";d.children[0].textContent=x.aluno;d.children[1].textContent=x.dataBr+(x.media?" · média "+x.media:"");h.appendChild(d)})}
 
 $("salvar").onclick=function(){var v=validate(),e=$("err");document.querySelectorAll(".miss").forEach(function(n){n.classList.remove("miss")});
  if(v.miss.length){v.el.forEach(function(n){n&&n.classList.add("miss")});e.style.display="block";e.textContent="Faltam "+v.miss.length+" item(ns) obrigatório(s), marcados em vermelho.";v.el[0]&&v.el[0].scrollIntoView({behavior:"smooth",block:"center"});return}
@@ -206,6 +206,12 @@ $("salvar").onclick=function(){var v=validate(),e=$("err");document.querySelecto
 var lt=null;$("limpar").onclick=function(){var b=$("limpar");if(!lt){b.textContent="Toque de novo para confirmar";lt=setTimeout(function(){b.textContent="Limpar formulário";lt=null},3000);return}clearTimeout(lt);lt=null;b.textContent="Limpar formulário";reset(true)};
 $("bNova").onclick=function(){var base=drafts[cur];drafts.splice(cur,1);if(!drafts.length)drafts.push(newDraft(base));cur=Math.min(cur,drafts.length-1);$("done").style.display="none";$("form").style.display="block";load(drafts[cur]);persist();scrollTo(0,0)};
 $("bCsv").onclick=function(){save(fname(last),csv([last]))};
+function setAllBtns(v){["bAll","bMailAll","bCopyAll","bClear"].forEach(function(id){$(id).style.display=v})}
+function allText(){var n=hist.length;return"MINI-CEX \u00b7 "+n+" aluno(s) \u00b7 Avaliador: "+(hist[n-1].avaliador||"-")+"\n\n"+hist.map(function(r,i){return"["+(i+1)+"/"+n+"]\n"+summary(r)}).join("\n\n==========\n\n")}
+function mailAll(e){if(!hist.length)return;var a=e.currentTarget,b=allText(),l=hist[hist.length-1];a.href="mailto:sandra.lopes@facens.br?cc=sandrabizarriavillanueva@gmail.com&subject="+encodeURIComponent("Mini-CEX \u2013 "+hist.length+" aluno(s) \u2013 "+iso2br(l.data))+"&body="+encodeURIComponent(b);setMsg(b.length>5000?"A mensagem \u00e9 longa. Se o e-mail abrir cortado, volte e toque em Copiar todos e cole no e-mail.":"Se o aplicativo de e-mail n\u00e3o abriu, toque em Copiar todos e cole em um e-mail.")}
+$("bMailAll").onclick=mailAll;$("bMailAll2").onclick=mailAll;
+$("bCopyAll").onclick=function(){if(!hist.length)return;copy(allText());setTimeout(function(){$("msg2").textContent=$("msg").textContent},300)};
+var clrT=null;$("bClear").onclick=function(){var b=$("bClear");if(!clrT){b.textContent="Toque de novo para limpar";clrT=setTimeout(function(){b.textContent="Limpar lista";clrT=null},3000);return}clearTimeout(clrT);clrT=null;b.textContent="Limpar lista";hist=[];ls("minicex_hist",hist);setMsg("");renderHist()};
 $("bCopy").onclick=function(){copy(summary(last))};
 $("bMail").onclick=function(){var r=rec(Object.assign({},last));$("bMail").href="mailto:sandra.lopes@facens.br?cc=sandrabizarriavillanueva@gmail.com&subject="+encodeURIComponent("Mini-CEX – "+r.aluno+" – "+r.dataBr)+"&body="+encodeURIComponent(summary(last));setMsg("Se o aplicativo de e-mail não abriu, toque em Copiar resumo e cole em um e-mail.")};
 $("bAll").onclick=function(){setMsg("");save("mini-cex_todas.csv",csv(hist))};
